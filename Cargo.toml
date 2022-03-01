@@ -10,6 +10,9 @@ license = "MIT OR Apache-2.0"
 edition = "2021"
 readme = "README.md"
 keywords = ["inline", "rust", "vbscript", "wsh", "activescript"]
+exclude = [
+    ".idea/*"
+]
 
 [dependencies]
 inline-vbs-macros = "0.1"
