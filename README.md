@@ -1,4 +1,4 @@
-# embed-c
+# inline-vbs
 
 `inline-vbs` is a crate that allows you to embed VBScript code inside Rust code files. It uses
 the [Active Scripting](https://docs.microsoft.com/en-us/archive/msdn-magazine/2000/december/active-scripting-apis-add-powerful-custom-debugging-to-your-script-hosting-app) COM APIs to dynamically parse and execute (optionally, evaluate) code.
