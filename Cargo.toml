@@ -1,0 +1,25 @@
+[package]
+name = "inline-vbs"
+version = "0.1.0"
+authors = ["Tom Niget <niget.tom@gmail.com>"]
+description = "Embed C code inside Rust using C2Rust"
+homepage = "https://github.com/zdimension/inline-vbs"
+repository = "https://github.com/zdimension/inline-vbs"
+documentation = "https://docs.rs/inline-vbs"
+license = "MIT OR Apache-2.0"
+edition = "2021"
+readme = "README.md"
+keywords = ["embed", "inline", "vbs", "rust", "vbscript", "wsh", "activescript"]
+
+[dependencies]
+inline-vbs-macros = { path = "./macros", version = "0.1" }
+cxx = "1.0.65"
+anyhow = "1.0.55"
+
+[build-dependencies]
+cxx-build = "1.0"
+
+[workspace]
+members = [
+    "macros"
+]
