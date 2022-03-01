@@ -8,10 +8,11 @@ the [Active Scripting](https://docs.microsoft.com/en-us/archive/msdn-magazine/20
 use inline_vbs::*;
 
 fn main() {
-
     vbs![On Error Resume Next]; // tired of handling errors?
     vbs![MsgBox "Hello, world!"];
-    println!("{}", vbs_!["VBScript" & " Rocks!"]);
+    if let Ok(Variant::String(str)) = vbs_!["VBScript" & " Rocks!"] {
+        println!("{}", str);
+    }
 }
 ```
 
