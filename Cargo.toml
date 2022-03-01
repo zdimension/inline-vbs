@@ -1,6 +1,6 @@
 [package]
 name = "inline-vbs"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Tom Niget <niget.tom@gmail.com>"]
 description = "Embed C code inside Rust using C2Rust"
 homepage = "https://github.com/zdimension/inline-vbs"
