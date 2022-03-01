@@ -4,6 +4,7 @@
 #include <tchar.h>
 #include <iostream>
 #include "rust/cxx.h"
+#include "inline-vbs/include/vbs.h"
 #include "comdef.h"
 
 class CSimpleScriptSite :
@@ -22,8 +23,8 @@ public:
     STDMETHOD(GetDocVersionString)(BSTR *pbstrVersion) { *pbstrVersion = SysAllocString(L"1.0"); return S_OK; }
     STDMETHOD(OnScriptTerminate)(const VARIANT *pvarResult, const EXCEPINFO *pexcepinfo) { return S_OK; }
     STDMETHOD(OnStateChange)(SCRIPTSTATE ssScriptState) { return S_OK; }
-    STDMETHOD(OnScriptError)(IActiveScriptError *pIActiveScriptError) { this->lastError = pIActiveScriptError; return S_OK; }
-    STDMETHOD(OnEnterScript)(void) { this->lastError = nullptr; return S_OK; }
+    STDMETHOD(OnScriptError)(IActiveScriptError *pIActiveScriptError) { return S_OK; }
+    STDMETHOD(OnEnterScript)(void) { return S_OK; }
     STDMETHOD(OnLeaveScript)(void) { return S_OK; }
 
     STDMETHOD(GetWindow)(HWND *phWnd) { *phWnd = m_hWnd; return S_OK; }
@@ -34,7 +35,6 @@ public:
 public:
     LONG m_cRefCount;
     HWND m_hWnd;
-    IActiveScriptError *lastError;
 };
 
 STDMETHODIMP_(ULONG) CSimpleScriptSite::AddRef()
@@ -71,9 +71,9 @@ STDMETHODIMP CSimpleScriptSite::QueryInterface(REFIID riid, void **ppvObject)
 
     return E_NOINTERFACE;
 }
-CSimpleScriptSite* script_site;
-CComPtr<IActiveScript> script_engine;
 CComPtr<IActiveScriptParse> script_parser;
+CComPtr<IActiveScript> script_engine;
+CSimpleScriptSite* script_site;
 bool initialized = false;
 
 #define TRY(x) if (FAILED(hr = x)) return hr;
@@ -104,7 +104,7 @@ int init()
     return S_OK;
 }
 
-int parse(rust::Str code)
+int parse(rust::Str code, VARIANT* output)
 {
     int wide_len = MultiByteToWideChar(CP_UTF8, 0, code.data(), code.length(), nullptr, 0);
     wchar_t* wcode = new wchar_t[wide_len + 1];
@@ -114,16 +114,25 @@ int parse(rust::Str code)
     CComVariant result;
     EXCEPINFO ei = { };
 
-    return script_parser->ParseScriptText(
+    int hr = script_parser->ParseScriptText(
             &wcode[0],
             nullptr,
             nullptr,
             nullptr,
             0,
             0,
-            0,
-            &result,
+            output ? SCRIPTTEXT_ISEXPRESSION : 0,
+            output ? output : &result,
             &ei);
+
+    delete[] wcode;
+
+    return hr;
+}
+
+int parse_wrapper(rust::Str code, char* output)
+{
+    return parse(code, (VARIANT*) output);
 }
 
 int close()
@@ -133,14 +142,23 @@ int close()
 
     HRESULT hr;
 
-    script_parser = nullptr;
-    script_engine = nullptr;
+    script_parser.p = nullptr; // TODO: this is a hack
+    script_engine.p = nullptr; // TODO: but so is COM anyway
     TRY(script_site->Release());
-    script_site = nullptr;
 
     ::CoUninitialize();
 
     initialized = false;
-
     return S_OK;
 }
+
+class VBSContext
+{
+public:
+    ~VBSContext()
+    {
+        close();
+    }
+};
+
+VBSContext sentinel; // cleaner atexit() implementation

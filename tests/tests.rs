@@ -1,26 +1,27 @@
 #[cfg(test)]
 mod tests {
-    use inline_vbs::vbs;
-    use inline_vbs_macros::vbs_raw;
+    use inline_vbs::*;
 
     #[test]
-    fn bidule()
+    fn test_statements()
     {
-        assert!(vbs![MsgBox Now].is_ok());
-
         assert!(vbs_raw!(r#"
-         Function Square(x As Integer)
-                Return x * x
+            Function Square(x)
+                Square = x * x
             End Function
         "#).is_ok());
 
-        assert!(vbs![Dim firstname].is_ok());
-        assert!(vbs![firstname="Sasha"].is_ok());
+        assert!(vbs![Dim variable].is_ok());
+        assert!(vbs![variable="Sasha"].is_ok());
 
-        assert!(vbs![MsgBox "Bonjour " & firstname].is_ok());
+        assert!(vbs![variable = "Bonjour " & variable & ", " & Square(5)].is_ok());
 
-        assert!(vbs![MsgBox 1 / 0].is_err());
+        assert!(vbs![variable = 1 / 0].is_err());
 
-        assert!(vbs![MsgBox "bye"].is_ok());
+        assert!(vbs![variable = "bye"].is_ok());
+
+        assert_eq!(Ok(Variant::I16(4)), vbs_![2 + 2]);
+
+        assert_eq!(Ok(Variant::String("Hello123bye".to_string())), vbs_!["Hello" & 123 & variable]);
     }
 }

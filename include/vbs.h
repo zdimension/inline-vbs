@@ -4,6 +4,5 @@
 #include <Windows.h>
 
 int init();
-int parse(rust::Str code);
-int close();
+int parse_wrapper(rust::Str code, char* output);
 rust::String error_to_string(int hr);

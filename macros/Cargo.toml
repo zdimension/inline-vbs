@@ -9,7 +9,7 @@ documentation = "https://docs.rs/inline-vbs"
 license = "MIT OR Apache-2.0"
 edition = "2021"
 readme = "README.md"
-keywords = ["embed", "inline", "vbs", "rust", "vbscript", "wsh", "activescript"]
+keywords = ["inline", "rust", "vbscript", "wsh", "activescript"]
 
 [lib]
 proc-macro = true
