@@ -22,6 +22,13 @@ Add this to your `Cargo.toml`:
 inline-vbs = "0.1"
 ```
 
+**Important:** You need to have the MSVC Build Tools installed on your computer, and you may need to run
+the `vsdevcmd.bat` script in your terminal to set up the build environment:
+```
+"C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64
+```
+(replace with the path of your VS installation)
+
 ## Limitations
 Many
 
