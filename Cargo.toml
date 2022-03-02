@@ -2,7 +2,7 @@
 name = "inline-vbs"
 version = "0.1.1"
 authors = ["Tom Niget <niget.tom@gmail.com>"]
-description = "Embed C code inside Rust using C2Rust"
+description = "Embed VBScript code inside Rust"
 homepage = "https://github.com/zdimension/inline-vbs"
 repository = "https://github.com/zdimension/inline-vbs"
 documentation = "https://docs.rs/inline-vbs"
