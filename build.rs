@@ -1,5 +1,4 @@
-fn main()
-{
+fn main() {
     cxx_build::bridge("src/lib.rs")
         .cpp(true)
         .file("src/vbs.cpp")

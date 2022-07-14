@@ -104,12 +104,18 @@ int init()
     return S_OK;
 }
 
+wchar_t* to_wide(rust::Str str)
+{
+    int wide_len = MultiByteToWideChar(CP_UTF8, 0, str.data(), str.length(), nullptr, 0);
+    wchar_t* wcode = new wchar_t[wide_len + 1];
+    MultiByteToWideChar(CP_UTF8, 0, str.data(), -1, wcode, wide_len);
+    wcode[wide_len] = 0;
+    return wcode;
+}
+
 int parse(rust::Str code, VARIANT* output)
 {
-    int wide_len = MultiByteToWideChar(CP_UTF8, 0, code.data(), code.length(), nullptr, 0);
-    wchar_t* wcode = new wchar_t[wide_len + 1];
-    MultiByteToWideChar(CP_UTF8, 0, code.data(), -1, wcode, wide_len);
-    wcode[wide_len] = 0;
+    wchar_t* wcode = to_wide(code);
 
     CComVariant result;
     EXCEPINFO ei = { };
@@ -128,6 +134,34 @@ int parse(rust::Str code, VARIANT* output)
     delete[] wcode;
 
     return hr;
+}
+
+int set_variable(rust::Str name, char* val)
+{
+    HRESULT hr;
+
+    IDispatch* objPtr;
+    script_engine->GetScriptDispatch(nullptr, &objPtr);
+
+    DISPID varid;
+    wchar_t* wname = to_wide(name);
+
+    TRY(objPtr->GetIDsOfNames(IID_NULL, &wname, 1, LOCALE_USER_DEFAULT, &varid));
+
+    DISPPARAMS dspp;
+    ZeroMemory(&dspp, sizeof(dspp));
+    dspp.cArgs = dspp.cNamedArgs = 1;
+    DISPID dispPropPut = DISPID_PROPERTYPUT;
+    dspp.rgdispidNamedArgs = &dispPropPut;
+    VARIANT* var = (VARIANT*) val;
+    dspp.rgvarg = var;
+
+    TRY(objPtr->Invoke(varid, IID_NULL, LOCALE_USER_DEFAULT, DISPATCH_PROPERTYPUT, &dspp, nullptr, nullptr, nullptr));
+    VariantClear(var);
+
+    TRY(objPtr->Release());
+
+    return S_OK;
 }
 
 int parse_wrapper(rust::Str code, char* output)

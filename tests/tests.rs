@@ -1,27 +1,25 @@
 #[cfg(test)]
 mod tests {
     use inline_vbs::*;
+    use variant_rs::variant::Variant;
 
     #[test]
-    fn test_statements()
-    {
-        assert!(vbs_raw!(r#"
+    fn test_statements() {
+        vbs! {
             Function Square(x)
                 Square = x * x
             End Function
-        "#).is_ok());
+        }
+        assert_eq!(vbs_!(Square(2)), Variant::I16(4));
 
-        assert!(vbs![Dim variable].is_ok());
-        assert!(vbs![variable="Sasha"].is_ok());
+        vbs! {
+            variable = "Sasha"
+        }
 
-        assert!(vbs![variable = "Bonjour " & variable & ", " & Square(5)].is_ok());
+        assert_eq!(vbs_!(variable), "Sasha".into());
 
-        assert!(vbs![variable = 1 / 0].is_err());
+        let name = "inline_vbs";
 
-        assert!(vbs![variable = "bye"].is_ok());
-
-        assert_eq!(Ok(Variant::I16(4)), vbs_![2 + 2]);
-
-        assert_eq!(Ok(Variant::String("Hello123bye".to_string())), vbs_!["Hello" & 123 & variable]);
+        assert_eq!(vbs_!["Hello" & 123 & 'name], "Hello123inline_vbs".into());
     }
 }

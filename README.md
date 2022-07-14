@@ -8,30 +8,30 @@ the [Active Scripting](https://docs.microsoft.com/en-us/archive/msdn-magazine/20
 use inline_vbs::*;
 
 fn main() {
-    vbs![On Error Resume Next]; // tired of handling errors?
-    vbs![MsgBox "Hello, world!"];
-    if let Ok(Variant::String(str)) = vbs_!["VBScript" & " Rocks!"] {
-        println!("{}", str);
-    }
+    vbs! { On Error Resume Next } // tired of handling errors?
+    vbs! { MsgBox "Hello, world!" }
+    let language = "VBScript";
+    assert_eq!(vbs_!['language & " Rocks!"], "VBScript Rocks!".into());
 }
 ```
+Macros:
+* `vbs!` - Executes a statement or evaluates an expression (depending on context)
+* `vbs_!` - Evaluates an expression
+* `vbs_raw!` - Executes a statement (string input instead of tokens, use for multiline code)
+  See more examples in [tests/tests.rs](tests/tests.rs)
 
 ## Installation
 Add this to your `Cargo.toml`:
 ```toml
 [dependencies]
-inline-vbs = "0.1"
+inline-vbs = "0.2"
 ```
 
-**Important:** You need to have the MSVC Build Tools installed on your computer, and you may need to run
-the `vsdevcmd.bat` script in your terminal to set up the build environment:
-```
-"C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64
-```
-(replace with the path of your VS installation)
+**Important:** You need to have the MSVC Build Tools installed on your computer, as required by [cc](https://github.com/rust-lang/cc-rs).
 
 ## Limitations
-Many
+Many. Most notably, `IDispatch` objects (i.e. what `CreateObject` returns) can't be passed to
+the engine (`let x = vbs! { CreateObject("WScript.Shell") }; vbs! { y = 'x }` won't work).
 
 ## Motivation
 N/A

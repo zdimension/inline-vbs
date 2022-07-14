@@ -5,13 +5,10 @@
 //! ```rust
 //! use inline_vbs::*;
 //!
-//! fn main() {
-//!     vbs![On Error Resume Next]; // tired of handling errors?
-//!     vbs![MsgBox "Hello, world!"];
-//!     if let Ok(Variant::String(str)) = vbs_!["VBScript" & " Rocks!"] {
-//!         println!("{}", str);
-//!     }
-//! }
+//! vbs! { On Error Resume Next } // tired of handling errors?
+//! vbs! { MsgBox "Hello, world!" }
+//! let language = "VBScript";
+//! assert_eq!(vbs_!['language & " Rocks!"], "VBScript Rocks!".into());
 //! ```
 //!
 //! Macros:
@@ -22,7 +19,8 @@
 //! See more examples in [tests/tests.rs](tests/tests.rs)
 //!
 //! ### Limitations
-//! Many
+//! Many. Most notably, `IDispatch` objects (i.e. what `CreateObject` returns) can't be passed to
+//! the engine (`let x = vbs! { CreateObject("WScript.Shell") }; vbs! { y = 'x }` won't work).
 //!
 //! ### Motivation
 //! N/A
@@ -39,62 +37,80 @@
 //!
 //! at your option.
 
-mod variant;
-
 use std::os::raw::c_char;
+pub use variant_rs::variant::ToVariant;
+pub use variant_rs::variant::Variant;
 
-use winapi::um::oaidl::VARIANT;
+pub use winapi::um::oaidl::VARIANT;
+use winapi::um::oleauto::VariantInit;
 
 pub use inline_vbs_macros::{vbs, vbs_, vbs_raw};
-pub use crate::variant::Variant;
-use crate::variant::{decode_variant};
 
+#[allow(clippy::upper_case_acronyms)]
 type HRESULT = i32;
 
 #[cxx::bridge]
-mod ffi
-{
-    unsafe extern "C++"
-    {
+mod ffi {
+    unsafe extern "C++" {
         include!("inline-vbs/include/vbs.h");
 
         pub fn init() -> i32;
         pub unsafe fn parse_wrapper(str: &str, output: *mut c_char) -> i32;
         pub fn error_to_string(error: i32) -> String;
+        pub unsafe fn set_variable(name: &str, val: *mut c_char) -> i32;
     }
 }
 
-fn decode_hr<T>(hr: i32, val: T) -> Result<T, String>
-{
-    if hr != 0 { Err(ffi::error_to_string(hr)) } else { Ok(val) }
+fn decode_hr<T>(hr: i32, val: T) -> Result<T, String> {
+    if hr != 0 {
+        Err(ffi::error_to_string(hr))
+    } else {
+        Ok(val)
+    }
 }
 
-fn or_die(hr: HRESULT)
-{
-    if let Err(msg) = decode_hr(hr, ())
-    {
+fn or_die(hr: HRESULT) {
+    if let Err(msg) = decode_hr(hr, ()) {
         panic!("Internal VBS error: {}", msg);
     }
 }
 
-pub fn run_code(code: &str) -> Result<(), String>
-{
-    unsafe
-        {
-            or_die(ffi::init());
-            let result = ffi::parse_wrapper(code, std::ptr::null_mut());
-            decode_hr(result, ())
-        }
+pub trait Runner {
+    fn run_code(code: &str) -> Self;
 }
 
-pub fn run_expr(code: &str) -> Result<Variant, String>
-{
-    unsafe
-        {
+impl Runner for Variant {
+    fn run_code(code: &str) -> Self {
+        unsafe {
             or_die(ffi::init());
             let mut variant: VARIANT = std::mem::zeroed();
-            let result = ffi::parse_wrapper(code, (&mut variant) as *mut VARIANT as *mut c_char);
-            decode_hr(result, decode_variant(variant))
+            VariantInit(&mut variant);
+            let result =
+                ffi::parse_wrapper(code.trim(), (&mut variant) as *mut VARIANT as *mut c_char);
+            decode_hr(result, ()).unwrap();
+            variant.try_into().unwrap()
         }
+    }
 }
 
+impl Runner for () {
+    fn run_code(code: &str) -> Self {
+        unsafe {
+            or_die(ffi::init());
+            let result = ffi::parse_wrapper(code, std::ptr::null_mut());
+            decode_hr(result, ()).unwrap();
+        }
+    }
+}
+
+pub fn set_variable(name: &str, val: impl ToVariant) -> Result<(), String> {
+    unsafe {
+        let _: () = Runner::run_code(format!("Dim {}", name).as_str());
+        let var = val.to_variant();
+        let ptr: VARIANT = var
+            .try_into()
+            .map_err(|e| format!("Variant conversion error: {:?}", e))?;
+        let result = ffi::set_variable(name, &ptr as *const VARIANT as *mut _);
+        decode_hr(result, ())
+    }
+}
