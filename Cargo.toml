@@ -1,6 +1,6 @@
 [package]
 name = "inline-vbs"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Tom Niget <niget.tom@gmail.com>"]
 description = "Embed VBScript code inside Rust"
 homepage = "https://github.com/zdimension/inline-vbs"
@@ -30,3 +30,7 @@ cxx-build = "1.0"
 members = [
     "macros"
 ]
+
+[package.metadata.docs.rs]
+default-target = "x86_64-pc-windows-msvc"
+targets = ["x86_64-pc-windows-msvc"]
