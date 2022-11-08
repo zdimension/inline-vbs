@@ -26,9 +26,6 @@ variant-rs = "0.1"
 [build-dependencies]
 cxx-build = "1.0"
 
-[patch.crates-io]
-cc = { git = "https://github.com/zdimension/cc-rs" } # https://github.com/rust-lang/cc-rs/pull/699
-
 [workspace]
 members = [
     "macros"
