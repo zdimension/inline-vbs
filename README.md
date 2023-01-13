@@ -3,6 +3,9 @@
 `inline-vbs` is a crate that allows you to embed VBScript, JScript and many other languages inside Rust code files. It uses
 the [Active Scripting](https://docs.microsoft.com/en-us/archive/msdn-magazine/2000/december/active-scripting-apis-add-powerful-custom-debugging-to-your-script-hosting-app) COM APIs to dynamically parse and execute (optionally, evaluate) code.
 
+![image](https://user-images.githubusercontent.com/4533568/212424549-7440814e-64b4-4deb-853f-b28531904670.png)
+
+
 ## Basic usage
 ```rust
 use inline_vbs::*;
