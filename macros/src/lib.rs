@@ -28,18 +28,41 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #![feature(proc_macro_span)]
 
 use litrs::StringLit;
+use paste::paste;
 use proc_macro::LineColumn;
 use proc_macro::Span;
-use proc_macro2::TokenStream;
 use proc_macro2::{Delimiter, Ident, Spacing, TokenTree};
-use quote::quote;
+use proc_macro2::{Punct, TokenStream};
 use quote::quote_spanned;
+use quote::{quote, ToTokens, TokenStreamExt};
 use std::collections::BTreeMap;
 use std::fmt::Write;
 
+#[derive(Copy, Clone, Debug)]
+#[repr(C)]
+enum ScriptLang {
+    VBScript,
+    JScript,
+    Perl,
+    Ruby,
+}
+
+impl ToTokens for ScriptLang {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        tokens.append(Ident::new("inline_vbs", proc_macro2::Span::call_site()));
+        tokens.append(Punct::new(':', Spacing::Joint));
+        tokens.append(Punct::new(':', Spacing::Alone));
+        tokens.append(Ident::new("ScriptLang", proc_macro2::Span::call_site()));
+        tokens.append(Punct::new(':', Spacing::Joint));
+        tokens.append(Punct::new(':', Spacing::Alone));
+        let lang = format!("{:?}", self);
+        tokens.append(Ident::new(&lang, proc_macro2::Span::call_site()));
+    }
+}
+
 extern crate proc_macro;
 
-fn macro_impl(input: TokenStream) -> Result<TokenStream, TokenStream> {
+fn macro_impl(input: TokenStream, lang: ScriptLang) -> Result<TokenStream, TokenStream> {
     let mut x = EmbedVbs::new();
 
     x.add(input)?;
@@ -53,53 +76,60 @@ fn macro_impl(input: TokenStream) -> Result<TokenStream, TokenStream> {
 
     Ok(quote! {
         {
-            #(::inline_vbs::set_variable(#varname, #var).unwrap();)*
-            ::inline_vbs::Runner::run_code(#code)
+            #(::inline_vbs::set_variable(#varname, #var, #lang).expect("Couldn't set variable");)*
+            ::inline_vbs::Runner::run_code(#code, #lang)
         }
     })
 }
 
-#[proc_macro]
-pub fn vbs(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    proc_macro::TokenStream::from(process_tokens(input))
+macro_rules! lang {
+    ($name:ident, $val:ident) => {
+        #[proc_macro]
+        pub fn $name(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+            proc_macro::TokenStream::from(process_tokens(input, ScriptLang::$val))
+        }
+
+        paste! {
+            #[proc_macro]
+            pub fn [< $name _ >](input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+                let call = process_tokens(input, ScriptLang::$val);
+                (quote! {
+                    {
+                        let res: Variant = #call;
+                        res
+                    }
+                })
+                    .into()
+            }
+
+            #[proc_macro]
+            pub fn [< $name _raw >](input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+                let input = input.into_iter().collect::<Vec<_>>();
+                if input.len() != 1 {
+                    let msg = format!("expected exactly one input token, got {}", input.len());
+                    return quote! { compile_error!(#msg) }.into();
+                }
+                let string_lit = match StringLit::try_from(&input[0]) {
+                    Err(e) => return e.to_compile_error(),
+                    Ok(lit) => lit,
+                };
+                let code = string_lit.value();
+                quote! [::inline_vbs::run_code(#code, ScriptLang::$val)].into()
+            }
+        }
+    };
 }
 
-fn process_tokens(input: proc_macro::TokenStream) -> TokenStream {
-    match macro_impl(TokenStream::from(input)) {
+lang!(vbs, VBScript);
+lang!(js, JScript);
+lang!(perl, Perl);
+lang!(ruby, Ruby);
+
+fn process_tokens(input: proc_macro::TokenStream, lang: ScriptLang) -> TokenStream {
+    match macro_impl(TokenStream::from(input), lang) {
         Ok(tokens) => tokens,
         Err(tokens) => tokens,
     }
-}
-
-#[proc_macro]
-pub fn vbs_(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    let call = process_tokens(input);
-    (quote! {
-        {
-            let res: Variant = #call;
-            res
-        }
-    })
-    .into()
-}
-
-#[proc_macro]
-pub fn vbs_raw(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    let input = input.into_iter().collect::<Vec<_>>();
-
-    if input.len() != 1 {
-        let msg = format!("expected exactly one input token, got {}", input.len());
-        return quote! { compile_error!(#msg) }.into();
-    }
-
-    let string_lit = match StringLit::try_from(&input[0]) {
-        Err(e) => return e.to_compile_error(),
-        Ok(lit) => lit,
-    };
-
-    let code = string_lit.value();
-
-    quote! [::inline_vbs::run_code(#code)].into()
 }
 
 struct EmbedVbs {

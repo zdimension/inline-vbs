@@ -1,6 +1,6 @@
 [package]
 name = "inline-vbs-macros"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Tom Niget <niget.tom@gmail.com>"]
 description = "Macros for the `inline-vbs` crate"
 homepage = "https://github.com/zdimension/inline-vbs"
@@ -16,5 +16,6 @@ proc-macro = true
 
 [dependencies]
 litrs = "0.2.3"
+paste = "1.0.11"
 proc-macro2 = "1.0"
 quote = "1.0.15"

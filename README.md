@@ -1,6 +1,6 @@
 # inline-vbs
 
-`inline-vbs` is a crate that allows you to embed VBScript code inside Rust code files. It uses
+`inline-vbs` is a crate that allows you to embed VBScript, JScript and many other languages inside Rust code files. It uses
 the [Active Scripting](https://docs.microsoft.com/en-us/archive/msdn-magazine/2000/december/active-scripting-apis-add-powerful-custom-debugging-to-your-script-hosting-app) COM APIs to dynamically parse and execute (optionally, evaluate) code.
 
 ## Basic usage
@@ -18,20 +18,32 @@ Macros:
 * `vbs!` - Executes a statement or evaluates an expression (depending on context)
 * `vbs_!` - Evaluates an expression
 * `vbs_raw!` - Executes a statement (string input instead of tokens, use for multiline code)
-  See more examples in [tests/tests.rs](tests/tests.rs)
+  See more examples in [tests/tests.rs](tests/tests.rs).
 
 ## Installation
 Add this to your `Cargo.toml`:
 ```toml
 [dependencies]
-inline-vbs = "0.2.1"
+inline-vbs = "0.3.0"
 ```
 
 **Important:** You need to have the MSVC Build Tools installed on your computer, as required by [cc](https://github.com/rust-lang/cc-rs).
 
+### Language support
+
+VBScript (`vbs!`) and JScript (`js!`) are available out of the box on 32-bit and 64-bit.
+
+Other Active Scripting engines exist:
+- Ruby (`ruby!`): ActiveScriptRuby [1.8 (tested, 32-bit only)](https://www.artonx.org/data/asr/ActiveRuby.msi)
+  - [2.4 (32 or 64-bit) (untested!)](https://www.artonx.org/data/asr/), you need to change the CLSID in [src/vbs.cpp](src/vbs.cpp)
+- Perl (`perl!`): [ActivePerl 5.20 (32-bit)](https://raw.githubusercontent.com/PengjieRen/LibSum/master/ActivePerl-5.20.2.2002-MSWin32-x86-64int-299195.msi)
+
+Note: install an engine matching the bitness of your program; by default Rust on Windows builds 
+64-bit programs, which can only use 64-bit libraries. If you want to use a 32-bit library, you
+need to build your program with `--target i686-pc-windows-msvc`.
+
 ## Limitations
-Many. Most notably, `IDispatch` objects (i.e. what `CreateObject` returns) can't be passed to
-the engine (`let x = vbs! { CreateObject("WScript.Shell") }; vbs! { y = 'x }` won't work).
+Many. 
 
 ## Motivation
 N/A
