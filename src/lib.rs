@@ -57,8 +57,7 @@ impl Runner for Variant {
     fn run_code(code: &str, lang: ScriptLang) -> Self {
         unsafe {
             or_die(ffi::init());
-            let mut variant: VARIANT = std::mem::zeroed();
-            VariantInit(&mut variant);
+            let mut variant = VariantInit();
             let result = ffi::parse_wrapper(
                 code.trim(),
                 (&mut variant) as *mut VARIANT as *mut c_char,

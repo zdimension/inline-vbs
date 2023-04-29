@@ -27,7 +27,7 @@ Macros:
 Add this to your `Cargo.toml`:
 ```toml
 [dependencies]
-inline-vbs = "0.3.0"
+inline-vbs = "0.4.0"
 ```
 
 **Important:** You need to have the MSVC Build Tools installed on your computer, as required by [cc](https://github.com/rust-lang/cc-rs).

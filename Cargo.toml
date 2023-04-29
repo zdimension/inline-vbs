@@ -1,8 +1,8 @@
 [package]
 name = "inline-vbs"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["Tom Niget <niget.tom@gmail.com>"]
-description = "Embed VBScript code inside Rust"
+description = "Embed VBScript (and JScript, Ruby, Perl, ...) code inside Rust"
 homepage = "https://github.com/zdimension/inline-vbs"
 repository = "https://github.com/zdimension/inline-vbs"
 documentation = "https://docs.rs/inline-vbs"
@@ -15,12 +15,12 @@ exclude = [
 ]
 
 [dependencies]
-inline-vbs-macros = { version = "0.3", path = "./macros" }
-variant-rs = { version = "0.2.1" }
-windows = { version = "0.43.0", features = ["Win32_System_Com", "Win32_System_Ole", "Win32_Foundation"] }
-cxx = "1.0.85"
+inline-vbs-macros = { version = "0.4", path = "./macros" }
+variant-rs = { version = "0.3.1" }
+windows = { version = "0.48.0", features = ["Win32_System_Com", "Win32_System_Ole", "Win32_Foundation"] }
+cxx = "1.0.94"
 widestring = "1.0.2"
-enumn = "0.1.6"
+enumn = "0.1.8"
 dep_doc = "0.1.1"
 
 [build-dependencies]
